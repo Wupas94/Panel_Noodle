@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.db.models import Sum
 from datetime import timedelta
 from core.models import TimeEntry
-from .forms import TimeEntryEditForm
+from .forms import TimeEntryEditForm, TimeEntryCreateForm
 
 # Create your views here.
 
@@ -141,8 +141,9 @@ def edit_time_entry(request, entry_id):
     context = {
         'form': form,
         'entry': entry,
+        'is_new': False
     }
-    return render(request, 'dashboard/edit_time_entry.html', context)
+    return render(request, 'dashboard/time_entry_form.html', context)
 
 @login_required
 def admin_time_entries(request):
@@ -156,3 +157,27 @@ def admin_time_entries(request):
         'entries': entries,
     }
     return render(request, 'dashboard/admin_time_entries.html', context)
+
+@login_required
+def create_time_entry(request):
+    """Tworzenie nowego wpisu czasu pracy."""
+    if request.method == 'POST':
+        form = TimeEntryCreateForm(request.POST)
+        if form.is_valid():
+            time_entry = form.save(commit=False)
+            time_entry.employee = request.user.profile
+            time_entry.status = 'Pending'
+            time_entry.save()
+            messages.success(request, 'Wpis został utworzony.')
+            return redirect('time_entries')
+    else:
+        # Domyślnie ustaw aktualną datę i godzinę
+        form = TimeEntryCreateForm(initial={
+            'start_time': timezone.now().strftime('%Y-%m-%dT%H:%M')
+        })
+    
+    context = {
+        'form': form,
+        'is_new': True
+    }
+    return render(request, 'dashboard/time_entry_form.html', context)
