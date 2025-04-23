@@ -151,20 +151,20 @@ class TimeEntry(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        # Calculate duration only if end_time is set
+        # Oblicz duration tylko jeśli mamy obie daty
         if self.start_time and self.end_time:
             self.duration = self.end_time - self.start_time
-        else:
-            self.duration = None
+        
+        # Zawsze ustaw week_number i year na podstawie start_time
+        if self.start_time:
+            iso_calendar = self.start_time.isocalendar()
+            self.year = iso_calendar.year
+            self.week_number = iso_calendar.week
             
-        # Set week number and year
-        self.week_number = self.start_time.isocalendar()[1]
-        self.year = self.start_time.year
-
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.employee} - {self.start_time.date()} ({self.status})"
+        return f"{self.employee} - {self.start_time.strftime('%Y-%m-%d %H:%M')}"
 
 
 class Payout(models.Model):
